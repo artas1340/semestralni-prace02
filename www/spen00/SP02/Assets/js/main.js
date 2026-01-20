@@ -1,30 +1,31 @@
 
-const CLIENT_ID = '740364404062-ovtbp9n06nejt682hlnb1g5hjs3qn129.apps.googleusercontent.com';
+const App = (() => {
+  const CLIENT_ID = '740364404062-ovtbp9n06nejt682hlnb1g5hjs3qn129.apps.googleusercontent.com';
 
-const API_KEY = 'AIzaSyCLDYoPxOHIB0znePWvmo6kJS2OgZhGdrg';
+  const API_KEY = 'AIzaSyCLDYoPxOHIB0znePWvmo6kJS2OgZhGdrg';
 
-const SPREADSHEET_ID = '1b_WPjCTVGHW_q-4qBsVdBwUbVu7HxzzGUqNL2ZyCIPA';
+  const SPREADSHEET_ID = '1b_WPjCTVGHW_q-4qBsVdBwUbVu7HxzzGUqNL2ZyCIPA';
 
-const SHEET_NAME = 'Results';
+  const SHEET_NAME = 'Results';
 
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+  const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
-let tokenClient;
-let gapiInited = false;
-let gisInited = false;
-let isSignedIn = false;
+  let tokenClient;
+  let gapiInited = false;
+  let gisInited = false;
+  let isSignedIn = false;
 
 
-let allResults = [];     
-let currentRower = null;  
-let chartInstance = null; 
+  let allResults = [];
+  let currentRower = null;
+  let chartInstance = null;
 
-function getQueryParam(name) {
+  function getQueryParam(name) {
   const params = new URLSearchParams(window.location.search);
   return params.get(name);
-}
+  }
 
-function saveFiltersToLocalStorage() {
+  function saveFiltersToLocalStorage() {
   const filters = {
     category: document.getElementById('filter-category').value,
     testType: document.getElementById('filter-testType').value,
@@ -32,9 +33,9 @@ function saveFiltersToLocalStorage() {
     name: document.getElementById('filter-name').value
   };
   localStorage.setItem('rowingFilters', JSON.stringify(filters));
-}
+  }
 
-function loadFiltersFromLocalStorage() {
+  function loadFiltersFromLocalStorage() {
   const raw = localStorage.getItem('rowingFilters');
   if (!raw) return;
   try {
@@ -46,9 +47,9 @@ function loadFiltersFromLocalStorage() {
   } catch (e) {
     console.warn('Nepodařilo se načíst filtry z localStorage', e);
   }
-}
+  }
 
-function parseTimeToSeconds(timeStr) {
+  function parseTimeToSeconds(timeStr) {
   if (!timeStr) return null;
   const cleaned = timeStr.trim().replace(',', '.');
   const parts = cleaned.split(':').map(p => parseFloat(p));
@@ -63,9 +64,9 @@ function parseTimeToSeconds(timeStr) {
     seconds = parts[0];
   }
   return seconds;
-}
+  }
 
-function formatSeconds(sec) {
+  function formatSeconds(sec) {
   if (sec == null || isNaN(sec)) return '–';
   const totalSeconds = Math.round(sec * 10) / 10;
   const minutes = Math.floor(totalSeconds / 60);
@@ -74,13 +75,13 @@ function formatSeconds(sec) {
   const decimals = Math.round((seconds - secInt) * 10);
   const secStr = String(secInt).padStart(2, '0');
   return `${minutes}:${secStr}${decimals ? ',' + decimals : ''}`;
-}
+  }
 
-function sortByNameAsc(a, b) {
+  function sortByNameAsc(a, b) {
   return a.name.localeCompare(b.name, 'cs');
-}
+  }
 
-function getUniqueRowers(results) {
+  function getUniqueRowers(results) {
   const map = new Map();
   results.forEach(r => {
     if (!r.name) return;
@@ -93,9 +94,9 @@ function getUniqueRowers(results) {
     }
   });
   return Array.from(map.values()).sort(sortByNameAsc);
-}
+  }
 
-function getFilteredResults() {
+  function getFilteredResults() {
   const category = document.getElementById('filter-category').value;
   const testType = document.getElementById('filter-testType').value;
   const season = document.getElementById('filter-season').value;
@@ -110,10 +111,10 @@ function getFilteredResults() {
     if (name && !r.name.toLowerCase().includes(name)) return false;
     return true;
   });
-}
+  }
 
 
-function renderRowersTable() {
+  function renderRowersTable() {
   const tbody = document.getElementById('rowers-tbody');
   tbody.innerHTML = '';
 
@@ -164,10 +165,10 @@ function renderRowersTable() {
 
     tbody.appendChild(tr);
   });
-}
+  }
 
 
-function renderRowerDetail(rowerName) {
+  function renderRowerDetail(rowerName) {
   const detailName = document.getElementById('detail-name');
   const detailClub = document.getElementById('detail-club');
   const detailCategory = document.getElementById('detail-category');
@@ -275,9 +276,9 @@ function renderRowerDetail(rowerName) {
   });
 
   renderChartForRower(tests);
-}
+  }
 
-function populateFormRowers() {
+  function populateFormRowers() {
   const select = document.getElementById('form-rower');
   select.innerHTML = '';
 
@@ -292,10 +293,10 @@ function populateFormRowers() {
   if (currentRower) {
     select.value = currentRower;
   }
-}
+  }
 
 
-function renderChartForRower(tests) {
+  function renderChartForRower(tests) {
   const ctx = document.getElementById('performance-chart');
   if (!ctx) return;
 
@@ -383,23 +384,23 @@ function renderChartForRower(tests) {
       }
     }
   });
-}
+  }
 
 
-async function gapiLoaded() {
+  async function gapiLoaded() {
   await gapi.load('client', initializeGapiClient);
-}
+  }
 
-async function initializeGapiClient() {
+  async function initializeGapiClient() {
   await gapi.client.init({
     apiKey: API_KEY,
     discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
   });
   gapiInited = true;
   maybeEnableAuth();
-}
+  }
 
-function gsiLoaded() {
+  function gsiLoaded() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -407,15 +408,15 @@ function gsiLoaded() {
   });
   gisInited = true;
   maybeEnableAuth();
-}
+  }
 
-function maybeEnableAuth() {
+  function maybeEnableAuth() {
   if (gapiInited && gisInited) {
     document.getElementById('btn-auth').disabled = false;
   }
-}
+  }
 
-async function handleAuthClick() {
+  async function handleAuthClick() {
   tokenClient.callback = async (resp) => {
     if (resp.error) {
       console.error(resp);
@@ -431,9 +432,9 @@ async function handleAuthClick() {
   } else {
     tokenClient.requestAccessToken({ prompt: '' });
   }
-}
+  }
 
-function handleSignoutClick() {
+  function handleSignoutClick() {
   const token = gapi.client.getToken();
   if (token !== null) {
     google.accounts.oauth2.revoke(token.access_token);
@@ -444,23 +445,23 @@ function handleSignoutClick() {
   allResults = [];
   renderRowersTable();
   renderRowerDetail(null);
-}
+  }
 
-function updateAuthUi() {
+  function updateAuthUi() {
   const btnAuth = document.getElementById('btn-auth');
   const btnSignout = document.getElementById('btn-signout');
 
   if (isSignedIn) {
     btnAuth.textContent = 'Obnovit přístup';
-    btnSignout.style.display = 'inline-block';
+    btnSignout.classList.remove('hidden');
   } else {
     btnAuth.textContent = 'Přihlásit k Google';
-    btnSignout.style.display = 'none';
+    btnSignout.classList.add('hidden');
   }
-}
+  }
 
 
-async function fetchResults() {
+  async function fetchResults() {
   const loader = document.getElementById('rowers-loader');
   const errorEl = document.getElementById('rowers-error');
   loader.classList.remove('hidden');
@@ -518,9 +519,9 @@ async function fetchResults() {
   } finally {
     loader.classList.add('hidden');
   }
-}
+  }
 
-async function createResult(newResult) {
+  async function createResult(newResult) {
   const formMessage = document.getElementById('form-message');
   formMessage.textContent = '';
 
@@ -576,24 +577,24 @@ async function createResult(newResult) {
     formMessage.style.color = '#ff6b6b';
     formMessage.textContent = err.message || 'Nepodařilo se uložit test do Google Sheets.';
   }
-}
+  }
 
 
-function applyFilters() {
+  function applyFilters() {
   saveFiltersToLocalStorage();
   renderRowersTable();
-}
+  }
 
-function resetFilters() {
+  function resetFilters() {
   document.getElementById('filter-category').value = '';
   document.getElementById('filter-testType').value = '';
   document.getElementById('filter-season').value = '';
   document.getElementById('filter-name').value = '';
   saveFiltersToLocalStorage();
   renderRowersTable();
-}
+  }
 
-function selectRower(name) {
+  function selectRower(name) {
   currentRower = name;
   const url = new URL(window.location.href);
   url.searchParams.set('rower', name);
@@ -605,9 +606,9 @@ function selectRower(name) {
   if (select.options.length) {
     select.value = name;
   }
-}
+  }
 
-function handleFormSubmit(event) {
+  function handleFormSubmit(event) {
   event.preventDefault();
 
   const formMessage = document.getElementById('form-message');
@@ -662,24 +663,24 @@ function handleFormSubmit(event) {
   };
 
   createResult(newResult);
-}
+  }
 
-function handleAddNewRowerToggle() {
+  function handleAddNewRowerToggle() {
   const checkbox = document.getElementById('form-add-new-rower');
   const row = document.getElementById('form-new-rower-row');
   const select = document.getElementById('form-rower');
 
   if (checkbox.checked) {
-    row.style.display = 'flex';
+    row.classList.remove('hidden');
     select.disabled = true;
   } else {
-    row.style.display = 'none';
+    row.classList.add('hidden');
     select.disabled = false;
   }
-}
+  }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => {
   loadFiltersFromLocalStorage();
 
   document.getElementById('btn-apply-filters').addEventListener('click', applyFilters);
@@ -702,4 +703,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-auth').addEventListener('click', handleAuthClick);
   document.getElementById('btn-signout').addEventListener('click', handleSignoutClick);
 
-});
+  });
+
+  return {
+    gapiLoaded,
+    gsiLoaded,
+  };
+})();
+
+window.gapiLoaded = App.gapiLoaded;
+window.gsiLoaded = App.gsiLoaded;
